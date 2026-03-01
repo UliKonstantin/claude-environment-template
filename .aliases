@@ -1,0 +1,82 @@
+# Claude Code slash-command reference
+# Usage: source .aliases   (or add to ~/.zshrc / ~/.zprofile)
+# Then run:  cc
+
+cc() {
+  { set +x; } 2>/dev/null  # suppress shell tracing inside this function
+
+  # Walk up from cwd to find .claude/commands/
+  local cmd_dir=""
+  local dir="$PWD"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -d "$dir/.claude/commands" ]]; then
+      cmd_dir="$dir/.claude/commands"
+      break
+    fi
+    dir="$(dirname "$dir")"
+  done
+
+  if [[ -z "$cmd_dir" ]]; then
+    echo "Error: no .claude/commands/ directory found in this or any parent directory."
+    return 1
+  fi
+
+  local bold="\033[1m"
+  local cyan="\033[36m"
+  local yellow="\033[33m"
+  local dim="\033[2m"
+  local reset="\033[0m"
+  local col=44   # fixed width for the command+hint column
+  # Declare loop vars once — re-declaring local inside a loop body causes
+  # zsh to echo the previous value on each subsequent iteration
+  local rel cmd desc hint left_plain pad
+
+  printf "\n${bold}Claude slash commands${reset}  ${dim}(%s)${reset}\n" "$cmd_dir"
+  printf '%0.s─' {1..65}; printf '\n'
+
+  while IFS= read -r -d '' file; do
+    rel="${file#"$cmd_dir/"}"
+    rel="${rel%.md}"
+    cmd="/${rel}"
+
+    # Use awk to extract description and argument-hint from YAML frontmatter
+    desc=$(awk '
+      /^---$/ { if (front==0) { front=1; next } else exit }
+      front && /^description:/ {
+        sub(/^description:[[:space:]]*/, "")
+        gsub(/^"|"$/, "")
+        print; exit
+      }
+    ' "$file")
+
+    hint=$(awk '
+      /^---$/ { if (front==0) { front=1; next } else exit }
+      front && /^argument-hint:/ {
+        sub(/^argument-hint:[[:space:]]*/, "")
+        gsub(/^"|"$/, "")
+        print; exit
+      }
+    ' "$file")
+
+    # Fall back to first meaningful line if no frontmatter description
+    # -E for extended regex (portable on macOS BSD grep)
+    if [[ -z "$desc" ]]; then
+      desc=$(grep -Em1 -v '^[[:space:]]*$|^---|^#' "$file")
+    fi
+
+    # Build the left column plain string for length calculation
+    left_plain="${cmd}"
+    [[ -n "$hint" ]] && left_plain="${left_plain} ${hint}"
+    pad=$(( col - ${#left_plain} ))
+    (( pad < 1 )) && pad=1
+
+    # Print with colors, using computed padding
+    printf "  ${cyan}${bold}%s${reset}" "$cmd"
+    [[ -n "$hint" ]] && printf " ${yellow}%s${reset}" "$hint"
+    printf "%${pad}s%s\n" "" "$desc"
+
+  done < <(find "$cmd_dir" -name "*.md" -print0 | sort -z)
+
+  printf '%0.s─' {1..65}; printf '\n'
+  printf "${dim}Invoke inside Claude Code: /command-name [args]${reset}\n\n"
+}
