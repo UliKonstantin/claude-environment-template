@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/UliKonstantin4/.local/bin/**)",
+      "Bash(/Users/UliKonstantin4/.local/bin/uv run python:*)",
+      "WebFetch(domain:app.arboxapp.com)",
+      "WebFetch(domain:arboxapp.com)"
+    ]
+  }
+}
