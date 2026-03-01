@@ -488,8 +488,8 @@ The MVP succeeds when the bot reliably registers for at least one configured cla
 
 - [CLAUDE.md](../CLAUDE.md) — Development conventions and commands
 - [context.md](../context.md) — Session history and setup notes
-- `.claude/reference/fastapi-best-practices.md` — API patterns (if backend is added later)
-- `.claude/reference/testing-and-logging.md` — pytest and structlog patterns
+- `.agents/reference/fastapi-best-practices.md` — API patterns (if backend is added later)
+- `.agents/reference/testing-and-logging.md` — pytest and structlog patterns
 
 ### Key External Resources
 
